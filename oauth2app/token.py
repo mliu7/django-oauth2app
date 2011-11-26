@@ -137,7 +137,7 @@ class TokenGenerator(object):
         """
         self.grant_type = request.REQUEST.get('grant_type')
         self.client_id = request.REQUEST.get('client_id')
-        self.client_secret = request.POST.get('client_secret')
+        self.client_secret = request.REQUEST.get('client_secret')
         self.scope = request.REQUEST.get('scope')
         if self.scope is not None:
             self.scope = set(self.scope.split())
