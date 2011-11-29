@@ -372,8 +372,9 @@ class TokenGenerator(object):
             refreshable=self.refreshable)
         if self.authentication_method == MAC:
             access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
-        access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
-        access_token.scope = access_ranges
+        if self.scope is not None:
+            access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
+            access_token.scope = access_ranges
         access_token.save()
         self.code.delete()
         return access_token
@@ -386,8 +387,9 @@ class TokenGenerator(object):
             refreshable=self.refreshable)
         if self.authentication_method == MAC:
             access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
-        access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
-        access_token.scope = access_ranges
+        if self.scope is not None:
+            access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
+            access_token.scope = access_ranges
         access_token.save()
         return access_token
 
@@ -395,21 +397,23 @@ class TokenGenerator(object):
         """Generate an access token after refresh authorization."""
         self.access_token.refresh_token = KeyGenerator(REFRESH_TOKEN_LENGTH)()
         self.access_token.expire = TimestampGenerator(ACCESS_TOKEN_EXPIRATION)()
-        access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
-        self.access_token.scope = access_ranges
+        if self.scope is not None:
+            access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
+            self.access_token.scope = access_ranges
         self.access_token.save()
         return self.access_token
 
     def _get_client_credentials_token(self):
         """Generate an access token after client_credentials authorization."""
-        access_token = AccessToken.objects.create(
+        self.access_token = AccessToken.objects.create(
             user=self.client.user,
             client=self.client,
             refreshable=self.refreshable)
         if self.authentication_method == MAC:
             access_token.mac_key = KeyGenerator(MAC_KEY_LENGTH)()
-        access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
-        self.access_token.scope = access_ranges
+        if self.scope is not None:
+            access_ranges = list(AccessRange.objects.filter(key__in=self.scope))
+            self.access_token.scope = access_ranges
         self.access_token.save()
         return self.access_token
 
