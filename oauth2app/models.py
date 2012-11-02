@@ -15,8 +15,12 @@ from oauth2app.consts import ACCESS_TOKEN_EXPIRATION, MAC_KEY_LENGTH, REFRESHABL
 from oauth2app.consts import CODE_KEY_LENGTH, CODE_EXPIRATION
 from oauth2app.forms import CustomURLFormField
 from oauth2app.validators import CustomURLValidator
+from south.modelsinspector import add_introspection_rules
 
 from trackable_object.models import TrackableObject
+
+
+add_introspection_rules([], ["^oauth2app\.models\.CustomURLField"])
 
 
 class TimestampGenerator(object):
