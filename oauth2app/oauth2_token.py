@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 
 """OAuth 2.0 Token Generation"""
@@ -9,13 +9,13 @@ from django.http import HttpResponse
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from simplejson import dumps
-from .exceptions import OAuth2Exception
-from .consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH
-from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
-from .consts import REFRESHABLE
-from .lib.uri import normalize
-from .models import Client, AccessRange, Code, AccessToken, TimestampGenerator
-from .models import KeyGenerator
+from oauth2app.exceptions import OAuth2Exception
+from oauth2app.consts import ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_LENGTH
+from oauth2app.consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
+from oauth2app.consts import REFRESHABLE
+from oauth2app.lib.uri import normalize
+from oauth2app.models import Client, AccessRange, Code, AccessToken, TimestampGenerator
+from oauth2app.models import KeyGenerator
 
 
 class AccessTokenException(OAuth2Exception):
@@ -416,6 +416,3 @@ class TokenGenerator(object):
             self.access_token.scope = access_ranges
         self.access_token.save()
         return self.access_token
-
-
-

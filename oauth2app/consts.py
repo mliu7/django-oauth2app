@@ -1,11 +1,11 @@
-#-*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 
 """OAuth 2.0 Default Values."""
 
 
 from django.conf import settings
-from .exceptions import OAuth2Exception
+from oauth2app.exceptions import OAuth2Exception
 
 
 # Length of the client key.
@@ -28,7 +28,7 @@ CODE_EXPIRATION = getattr(settings, "OAUTH2_CODE_EXPIRATION", 120)
 ACCESS_TOKEN_EXPIRATION = getattr(
     settings, 
     "OAUTH2_ACCESS_TOKEN_EXPIRATION", 
-    3600)
+    604800) # By default, they are good for one week
 # Sends and accepts Bearer style authentication parameters 
 # See http://tools.ietf.org/html/draft-ietf-oauth-saml2-bearer-03
 # and http://tools.ietf.org/html/draft-ietf-oauth-v2-bearer-04

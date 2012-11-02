@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 """
 URI Normalization function:
@@ -50,7 +51,8 @@ def url_normalize(url, charset='utf-8'):
     """
 
     def _clean(string):
-        string = unicode(unquote(string), 'utf-8', 'replace')
+        if not isinstance(string, unicode):
+            string = unicode(unquote(string), 'utf-8', 'replace')
         return unicodedata.normalize('NFC', string).encode('utf-8')
 
     default_port = {
@@ -65,6 +67,9 @@ def url_normalize(url, charset='utf-8'):
         'snews': 563,
         'snntp': 563,
     }
+    if not url:
+        return ''
+
     if isinstance(url, unicode):
         url = url.encode(charset, 'ignore')
 

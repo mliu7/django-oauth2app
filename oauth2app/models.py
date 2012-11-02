@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 
 """OAuth 2.0 Django Models"""
@@ -9,10 +9,14 @@ from hashlib import sha512
 from uuid import uuid4
 from django.db import models
 from django.contrib.auth.models import User
-from .consts import CLIENT_KEY_LENGTH, CLIENT_SECRET_LENGTH
-from .consts import ACCESS_TOKEN_LENGTH, REFRESH_TOKEN_LENGTH
-from .consts import ACCESS_TOKEN_EXPIRATION, MAC_KEY_LENGTH, REFRESHABLE
-from .consts import CODE_KEY_LENGTH, CODE_EXPIRATION
+from oauth2app.consts import CLIENT_KEY_LENGTH, CLIENT_SECRET_LENGTH
+from oauth2app.consts import ACCESS_TOKEN_LENGTH, REFRESH_TOKEN_LENGTH
+from oauth2app.consts import ACCESS_TOKEN_EXPIRATION, MAC_KEY_LENGTH, REFRESHABLE
+from oauth2app.consts import CODE_KEY_LENGTH, CODE_EXPIRATION
+from oauth2app.forms import CustomURLFormField
+from oauth2app.validators import CustomURLValidator
+
+from trackable_object.models import TrackableObject
 
 
 class TimestampGenerator(object):
@@ -48,7 +52,23 @@ class KeyGenerator(object):
         return sha512(uuid4().hex).hexdigest()[0:self.length]
 
 
-class Client(models.Model):
+class CustomURLField(models.URLField):
+    def __init__(self, verbose_name=None, name=None, **kwargs):
+        kwargs['max_length'] = kwargs.get('max_length', 200)
+        models.CharField.__init__(self, verbose_name, name, **kwargs)
+        self.validators.append(CustomURLValidator())
+
+    def formfield(self, **kwargs):
+        # As with CharField, this will cause URL validation to be performed
+        # twice.
+        defaults = {
+            'form_class': CustomURLFormField,
+        }
+        defaults.update(kwargs)
+        return super(models.URLField, self).formfield(**defaults)
+
+
+class Client(TrackableObject):
     """Stores client authentication data.
     
     **Args:**
@@ -72,16 +92,39 @@ class Client(models.Model):
     name = models.CharField(max_length=256)
     user = models.ForeignKey(User)
     description = models.TextField(null=True, blank=True)    
+    website = models.URLField(blank=True, max_length=256, verify_exists=False)
     key = models.CharField(
-        unique=True, 
         max_length=CLIENT_KEY_LENGTH, 
         default=KeyGenerator(CLIENT_KEY_LENGTH),
         db_index=True)
     secret = models.CharField(
-        unique=True, 
         max_length=CLIENT_SECRET_LENGTH, 
         default=KeyGenerator(CLIENT_SECRET_LENGTH))
-    redirect_uri = models.URLField(null=True, blank=True)
+    redirect_uri = CustomURLField(null=True, blank=True, verbose_name="Redirect URI",
+                                  help_text=("This is a full URL on your domain that Leaguevine will "
+                                             "redirect to after a user logs in using one of the two User "
+                                             "Login OAuth 2 flows. If you intend for users to log into your app, "
+                                             "this field is required."))
+
+    # Printing
+    def __unicode__(self):
+        return self.name
+
+    # URLs
+    def get_url_kwargs(self):
+        return {'app_id': self.id}
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('app_detail', (), self.get_url_kwargs())
+
+    @models.permalink
+    def get_absolute_edit_url(self):
+        return ('app_edit', (), self.get_url_kwargs())
+
+    @models.permalink
+    def get_absolute_remove_url(self):
+        return ('app_remove', (), self.get_url_kwargs())
 
 
 class AccessRange(models.Model):
@@ -187,6 +230,7 @@ class Code(models.Model):
     redirect_uri = models.URLField(null=True, blank=True)
     scope = models.ManyToManyField(AccessRange)
     
+
 class MACNonce(models.Model):
     """Stores Nonce strings for use with MAC Authentication.
 

@@ -1,18 +1,21 @@
-#-*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 
 """OAuth 2.0 Authorization"""
 
 
 import simplejson as json
-from django.http import absolute_http_url_re, HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
 from urllib import urlencode
-from .consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
-from .consts import CODE, TOKEN, CODE_AND_TOKEN
-from .consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
-from .exceptions import OAuth2Exception
-from .lib.uri import add_parameters, add_fragments, normalize
-from .models import Client, AccessRange, Code, AccessToken, KeyGenerator
+
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
+
+from oauth2app.consts import ACCESS_TOKEN_EXPIRATION, REFRESHABLE
+from oauth2app.consts import CODE, TOKEN, CODE_AND_TOKEN
+from oauth2app.consts import AUTHENTICATION_METHOD, MAC, BEARER, MAC_KEY_LENGTH
+from oauth2app.exceptions import OAuth2Exception
+from oauth2app.lib.uri import add_parameters, add_fragments, normalize
+from oauth2app.models import Client, AccessRange, Code, AccessToken, KeyGenerator
+from oauth2app.utils import absolute_custom_url_re
 
 
 class AuthorizationException(OAuth2Exception):
@@ -181,7 +184,7 @@ class Authorizer(object):
                 raise MissingRedirectURI("No redirect_uri"
                     "provided or registered.")
         elif self.client.redirect_uri is not None:
-            if normalize(self.redirect_uri) != normalize(self.client.redirect_uri):
+            if normalize(self.redirect_uri).rstrip('/') != normalize(self.client.redirect_uri).rstrip('/'):
                 self.redirect_uri = self.client.redirect_uri
                 raise InvalidRequest("Registered redirect_uri doesn't "
                     "match provided redirect_uri.")
@@ -195,7 +198,7 @@ class Authorizer(object):
         if self.authorized_response_type & RESPONSE_TYPES[self.response_type] == 0:
             raise UnauthorizedClient("Response type %s not allowed." %
                 self.response_type)
-        if not absolute_http_url_re.match(self.redirect_uri):
+        if not absolute_custom_url_re.match(self.redirect_uri):
             raise InvalidRequest('Absolute URI required for redirect_uri')
         # Scope
         if self.authorized_scope is not None and self.scope is None:
@@ -216,7 +219,7 @@ class Authorizer(object):
         """Raise MissingRedirectURI if no redirect_uri is available."""
         if self.redirect_uri is None:
             raise MissingRedirectURI('No redirect_uri to send response.')
-        if not absolute_http_url_re.match(self.redirect_uri):
+        if not absolute_custom_url_re.match(self.redirect_uri):
             raise MissingRedirectURI('Absolute redirect_uri required.')
 
     def error_redirect(self):

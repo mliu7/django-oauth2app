@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 
 """OAuth 2.0 Authentication"""
@@ -9,9 +9,9 @@ from urlparse import parse_qsl
 from simplejson import dumps
 from django.conf import settings
 from django.http import HttpResponse
-from .exceptions import OAuth2Exception
-from .models import AccessToken, AccessRange, TimestampGenerator
-from .consts import REALM, AUTHENTICATION_METHOD, MAC, BEARER
+from oauth2app.exceptions import OAuth2Exception
+from oauth2app.models import AccessToken, AccessRange, TimestampGenerator
+from oauth2app.consts import REALM, AUTHENTICATION_METHOD, MAC, BEARER
 
 class AuthenticationException(OAuth2Exception):
     """Authentication exception base class."""
@@ -95,6 +95,9 @@ class Authenticator(object):
             auth = self.request.META["HTTP_AUTHORIZATION"].split()
             self.auth_type = auth[0].lower()
             self.auth_value = " ".join(auth[1:]).strip()
+        elif self.request.META.get('REQUEST_METHOD') == 'GET':
+            self.auth_type = 'bearer'
+            self.auth_value = request.REQUEST.get('access_token')
         self.request_hostname = self.request.META.get("REMOTE_HOST")
         self.request_port = self.request.META.get("SERVER_PORT")
         try:
@@ -140,7 +143,11 @@ class Authenticator(object):
         try:
             self.access_token = AccessToken.objects.get(token=token)
         except AccessToken.DoesNotExist:
-            raise InvalidToken("Token doesn't exist")
+            if token:
+                raise InvalidToken("Access token doesn't exist")
+            else:
+                raise InvalidToken("Access token was missing from the request")
+
 
     def _validate_mac(self, mac_header):
         """Validate MAC authentication. Not implemented."""
